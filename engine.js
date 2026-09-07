@@ -112,7 +112,7 @@ rl.on('line', (line) => {
 
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
-    const maxTime = inc + min((time/3), 10000);
+    const maxTime = inc + Math.min((time/3), 10000);
 
     // Pour l'instant, on fait juste patienter le bot pour simuler une recherche
     const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
