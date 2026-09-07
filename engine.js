@@ -98,7 +98,7 @@ rl.on('line', (line) => {
     }
   } 
   else if (cmd === 'legalmoves') {
-    moves = words.slice(1).map(parseMoveStr);
+    moves = words.slice(1);
   } 
   else if (cmd === 'go') {
     // Parsing du temps
