@@ -5,12 +5,12 @@ const colsName = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
 // Positive = Blue (uppercase), Negative = Red (lowercase)
 const pieceToChar = {
-  1: 'R',   // Blue Rock
-  2: 'P',   // Blue Paper
-  3: 'S',   // Blue Scissors
-  [-1]: 'r', // Red Rock
-  [-2]: 'p', // Red Paper
-  [-3]: 's'  // Red Scissors
+  1: 'R',
+  2: 'P',
+  3: 'S',
+  [-1]: 'r',
+  [-2]: 'p',
+  [-3]: 's'
 };
 
 function squareName(idx) {
@@ -26,6 +26,7 @@ function squareIdx(sqStr) {
 }
 
 function parseMoveStr(moveStr) {
+  // Accepte Rf3-g4, f3-g4, Rf3xg4, f3xg4, etc.
   const clean = moveStr.replace(/^[RPSrps]/, '');
   const parts = clean.split(/[-x]/);
   return {
@@ -56,7 +57,7 @@ function parseFEN(fenString) {
   const parsedPieces = new Int8Array(81);
   const ranks = pieceStr.split('/');
 
-  // FEN : rank 1 (bas, côté Bleu, indices 72-80) → rank 9 (haut, indices 0-8)
+  // FEN rank 1 (bas, Bleu) → indices 72-80 ; rank 9 (haut) → 0-8
   for (let r = 0; r < 9; r++) {
     const rankStr = ranks[r];
     let col = 0;
@@ -79,6 +80,16 @@ function parseFEN(fenString) {
     }
   }
   return { pieces: parsedPieces, turn: sideStr === 'b' };
+}
+
+/** Applique un coup sur le plateau (modifie pieces + turn) */
+function applyMove(board, moveStr) {
+  const { from, to } = parseMoveStr(moveStr);
+  const fromPiece = board.pieces[from];
+  // On ignore la validation (le serveur envoie des coups légaux)
+  board.pieces[from] = 0;
+  board.pieces[to] = fromPiece;
+  board.turn = !board.turn;
 }
 
 // ==========================================
@@ -110,9 +121,18 @@ rl.on('line', (line) => {
   }
   else if (cmd === 'position') {
     const fenIdx = words.indexOf('fen');
-    if (fenIdx !== -1) {
-      const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
-      currentBoard = parseFEN(fenString);
+    if (fenIdx === -1) return;
+
+    // pieces + side (on ignore territory)
+    const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
+    currentBoard = parseFEN(fenString);
+
+    // Rejouer tous les coups déjà joués
+    const movesIdx = words.indexOf('moves');
+    if (movesIdx !== -1) {
+      for (let i = movesIdx + 1; i < words.length; i++) {
+        applyMove(currentBoard, words[i]);
+      }
     }
   }
   else if (cmd === 'legalmoves') {
@@ -127,25 +147,28 @@ rl.on('line', (line) => {
       if (words[i] === 'binc') binc = parseInt(words[i + 1], 10);
     }
 
+    if (!currentBoard) {
+      console.log(`bestmove ${moves[0] || 'a1-a1'}`);
+      return;
+    }
+
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
-    const maxTime = inc + Math.min(10000, time/20);
+    const maxTime = Math.max(50, Math.floor(inc + Math.min(10000, time / 20)));
 
     let bestMoveNum = null;
     try {
       bestMoveNum = iterativeDeepening(currentBoard, maxTime)[1];
     } catch (e) {
-      // timeout ou erreur → on tombe sur le fallback
+      // timeout
     }
 
     let bestStr = moveStr(bestMoveNum);
 
-    // Si le search n'a rien trouvé d'utilisable, on prend le premier coup légal
+    // Fallback si le search n'a rien trouvé
     if (!bestStr && moves.length > 0) {
       bestStr = moves[0];
     }
-
-    // Dernier filet de sécurité (ne devrait jamais arriver)
     if (!bestStr) {
       bestStr = "a1-a1";
     }
