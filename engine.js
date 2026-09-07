@@ -82,11 +82,9 @@ function parseFEN(fenString) {
   return { pieces: parsedPieces, turn: sideStr === 'b' };
 }
 
-/** Applique un coup sur le plateau (modifie pieces + turn) */
 function applyMove(board, moveStr) {
   const { from, to } = parseMoveStr(moveStr);
   const fromPiece = board.pieces[from];
-  // On ignore la validation (le serveur envoie des coups légaux)
   board.pieces[from] = 0;
   board.pieces[to] = fromPiece;
   board.turn = !board.turn;
@@ -134,6 +132,7 @@ rl.on('line', (line) => {
         applyMove(currentBoard, words[i]);
       }
     }
+    console.error("board", currentBoard.pieces);
   }
   else if (cmd === 'legalmoves') {
     moves = words.slice(1);

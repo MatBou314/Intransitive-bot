@@ -1051,6 +1051,7 @@ export function iterativeDeepening(board, maxTime, evalFunction = evalBasique2) 
       bestEval = currentEval;
       bestMove = currentMove;
       reachedDepth = depth;
+      if (bestEval >= 9999999 || bestEval <= -9999999) break;
     }
   } catch (error) {
       if (error.message !== "Timeout") throw error;
