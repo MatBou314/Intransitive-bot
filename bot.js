@@ -752,62 +752,61 @@ function goalProximity() {
       const d = DIST_TABLE[blueRocks[i] * 81 + 8];
       if (d < min) min = d;
       blueSum += d;
-      blueCount++;
     }
     blueSum += min * 10;
   }
 
+  min = 10;
   if (bluePCount > 0) {
     blueCount++;
     for (let i = 0; i < bluePCount; i++) {
       const d = DIST_TABLE[bluePapers[i] * 81 + 8];
       if (d < min) min = d;
       blueSum += d;
-      blueCount++;
     }
     blueSum += min * 10;
   }
 
+  min = 10;
   if (blueSCount > 0) {
     blueCount++;
     for (let i = 0; i < blueSCount; i++) {
       const d = DIST_TABLE[blueScissors[i] * 81 + 8];
       if (d < min) min = d;
       blueSum += d;
-      blueCount++;
     }
     blueSum += min * 10;
   }
 
+  min = 10;
   if (redRCount > 0) {
     redCount++;
     for (let i = 0; i < redRCount; i++) {
       const d = DIST_TABLE[redRocks[i] * 81 + 72];
       if (d < min) min = d;
       redSum += d;
-      redCount++;
     }
     redSum += min * 10;
   }
 
+  min = 10;
   if (redPCount > 0) {
     redCount++;
     for (let i = 0; i < redPCount; i++) {
       const d = DIST_TABLE[redPapers[i] * 81 + 72];
       if (d < min) min = d;
       redSum += d;
-      redCount++;
     }
     redSum += min * 10;
   }
 
+  min = 10;
   if (redSCount > 0) {
     redCount++;
     for (let i = 0; i < redSCount; i++) {
       const d = DIST_TABLE[redScissors[i] * 81 + 72];
       if (d < min) min = d;
       redSum += d;
-      redCount++;
     }
     redSum += min * 10;
   }
@@ -1059,16 +1058,4 @@ export function iterativeDeepening(board, maxTime, evalFunction = evalBasique2) 
       if (error.message !== "Timeout") throw error;
   }
   return [bestEval, bestMove];
-}
-
-export const botList1 = {
-  "Bot A1": (board, maxTime) => {
-    const move = iterativeDeepening(board, maxTime, evalBasique)[1];
-    return [move >> 8, move & 255];
-  },
-
-  "Bot A2": (board, maxTime) => {
-    const move = iterativeDeepening(board, maxTime, evalBasique2)[1];
-    return [move >> 8, move & 255];
-  },
 }
