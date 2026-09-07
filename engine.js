@@ -65,7 +65,7 @@ function parseFEN(fenString) {
 }
 
 // ==========================================
-// Time Reception
+// Reception
 // ==========================================
 const rl = readline.createInterface({
   input: process.stdin,
@@ -74,8 +74,8 @@ const rl = readline.createInterface({
 });
 
 let currentBoard = null;
+let moves = [];
 
-// Cette fonction s'exécute à chaque fois que le serveur Python t'envoie une ligne
 rl.on('line', (line) => {
   const words = line.trim().split(/\s+/);
   const cmd = words[0];
@@ -98,7 +98,7 @@ rl.on('line', (line) => {
     }
   } 
   else if (cmd === 'legalmoves') {
-    // Maybe later
+    moves = words.slice(1).map(parseMoveStr);
   } 
   else if (cmd === 'go') {
     // Parsing du temps
@@ -114,9 +114,8 @@ rl.on('line', (line) => {
     const time = currentBoard.turn ? btime : rtime;
     const maxTime = inc + Math.min((time/3), 10000);
 
-    // Pour l'instant, on fait juste patienter le bot pour simuler une recherche
-    console.log(currentBoard);
     const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
+    if (!moves.includes(bestMove)) console.log(moves[0]);
     console.log(`bestmove ${moveStr(bestMove)}`);
   } 
   else if (cmd === 'quit') {
