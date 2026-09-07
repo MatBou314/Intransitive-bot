@@ -115,7 +115,7 @@ rl.on('line', (line) => {
     const maxTime = inc + Math.min((time/3), 10000);
 
     const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
-    if (!moves.includes(bestMove)) console.log(`bestmove ${moveStr(moves[0])}`);
+    if (!moves.includes(bestMove)) console.log(`bestmove ${moves[0]}`);
     console.log(`bestmove ${moveStr(bestMove)}`);
   } 
   else if (cmd === 'quit') {
