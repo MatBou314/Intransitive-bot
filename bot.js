@@ -968,7 +968,6 @@ function getMinimax(depth, evalFunction, lastBestMove, alpha = -Infinity, beta =
     let bestEval = -Infinity;
     const moves = memMoves[movePtr];
     const movesCount = getMovesOrdered(moves, lastBestMove);
-    if (movesCount === 0) return turn ? -9999999 - depth : 9999999 + depth;
     for (let i = movesCount-1; i >= 0; i--) {
       const move = moves[i] & 0xFFFF;
       const from = move >> 8;
@@ -1001,7 +1000,6 @@ function getMinimax(depth, evalFunction, lastBestMove, alpha = -Infinity, beta =
     let bestEval = Infinity;
     const moves = memMoves[movePtr];
     const movesCount = getMovesOrdered(moves, lastBestMove);
-    if (movesCount === 0) return turn ? -9999999 - depth : 9999999 + depth;
     for (let i = movesCount-1; i >= 0; i--) {
       const move = moves[i] & 0xFFFF;
       const from = move >> 8;
