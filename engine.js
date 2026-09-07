@@ -4,7 +4,14 @@ import { iterativeDeepening } from './bot.js';
 
 const colsName = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
-
+const pieceToChar = {
+    1: 'R', // Red Rock
+    2: 'P', // Red Paper
+    3: 'S', // Red Scissors
+    "-1": 'r', // Blue Rock
+    "-2": 'p', // Blue Paper
+    "-3": 's'  // Blue Scissors
+}
 function squareName(idx) {
   const col = colsName[idx % 9];
   const row = 9 - Math.floor(idx / 9);
@@ -29,7 +36,11 @@ function parseMoveStr(moveStr) {
 function moveStr(move) {
     const from = move >> 8;
     const to = move & 255;
-    return `${squareName(from)}-${squareName(to)}`;
+    const {pieces} = currentBoard;
+    const fromPiece = pieces[from];
+    const toPiece = pieces[to];
+    if (toPiece === 0) return `${pieceToChar[fromPiece]}${squareName(from)}-${squareName(to)}`;
+    else return `${pieceToChar[fromPiece]}${squareName(from)}x${squareName(to)}`;
 }
 
 function parseFEN(fenString) {
@@ -106,7 +117,6 @@ rl.on('line', (line) => {
     moves = words.slice(1);
   } 
   else if (cmd === 'go') {
-    // Parsing du temps
     let rtime = 0, btime = 0, rinc = 0, binc = 0;
     for (let i = 1; i < words.length; i += 2) {
       if (words[i] === 'rtime') rtime = parseInt(words[i + 1], 10);
@@ -118,36 +128,15 @@ rl.on('line', (line) => {
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
     // Leave some margin; use a fraction of remaining time + increment
-    const maxTime = Math.max(50, Math.min(inc + Math.floor(time / 20), 10000));
+    const maxTime = inc + Math.min(10000, time/20);
 
-    let bestMoveNum = null;
-    try {
-      bestMoveNum = iterativeDeepening(currentBoard, maxTime)[1];
-    } catch (e) {
-      // ignore, fall back
-    }
+    const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
+    if (bestMove == null) console.log(`bestmove ${moves[0]}`);
+    const bestStr = moveStr(bestMove);
+    console.log(`bestmove ${bestStr}`);
 
-    let bestStr = null;
-    if (bestMoveNum != null) {
-      bestStr = moveStr(bestMoveNum);
-      // Prefer our move only if it is in the legal list (authoritative).
-      // legalmoves may use - or x as separator.
-      const normalized = bestStr.replace('x', '-');
-      const isLegal = moves.some(m => m.replace('x', '-') === normalized || m === bestStr);
-      if (!isLegal) {
-        bestStr = null;
-      }
-    }
-    if (!bestStr && moves.length > 0) {
-      bestStr = moves[0];
-    }
-    if (bestStr) {
-      console.log(`bestmove ${bestStr}`);
-    } else {
-      // Should never happen, but avoid hanging
-      console.log(`bestmove a1-a1`);
-    }
   } 
+
   else if (cmd === 'quit') {
     process.exit(0);
   }
