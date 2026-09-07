@@ -115,6 +115,7 @@ rl.on('line', (line) => {
     const maxTime = inc + Math.min((time/3), 10000);
 
     // Pour l'instant, on fait juste patienter le bot pour simuler une recherche
+    console.log(currentBoard);
     const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
     console.log(`bestmove ${moveStr(bestMove)}`);
   } 
