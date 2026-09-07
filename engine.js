@@ -122,7 +122,6 @@ rl.on('line', (line) => {
 
     // pieces + side (on ignore territory)
     const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
-    console.error(`FEN: ${fenString}`);
     currentBoard = parseFEN(fenString);
 
     // Rejouer tous les coups déjà joués
