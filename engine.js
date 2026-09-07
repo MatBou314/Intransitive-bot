@@ -63,7 +63,7 @@ function parseFEN(fenString) {
     let col = 0;
     for (let i = 0; i < rankStr.length; i++) {
       const char = rankStr[i];
-      if (char >= '1' && char <= '9') {
+      if (!isNaN(char) && char.trim() !== '') {
         col += parseInt(char, 10);
       } else {
         let pieceVal = 0;
@@ -112,7 +112,6 @@ rl.on('line', (line) => {
   if (cmd === 'rpsi') {
     console.log("id name MatBot-v1");
     console.log("id author MatBou314");
-    console.log("protocol 1");
     console.log("mode V6");
     console.log("rpsiok");
   }
@@ -125,6 +124,7 @@ rl.on('line', (line) => {
 
     // pieces + side (on ignore territory)
     const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
+    console.error(`FEN: ${fenString}`);
     currentBoard = parseFEN(fenString);
 
     // Rejouer tous les coups déjà joués
@@ -147,11 +147,6 @@ rl.on('line', (line) => {
       if (words[i] === 'binc') binc = parseInt(words[i + 1], 10);
     }
 
-    if (!currentBoard) {
-      console.log(`bestmove ${moves[0] || 'a1-a1'}`);
-      return;
-    }
-
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
     const maxTime = Math.max(50, Math.floor(inc + Math.min(10000, time / 20)));
@@ -165,12 +160,8 @@ rl.on('line', (line) => {
 
     let bestStr = moveStr(bestMoveNum);
 
-    // Fallback si le search n'a rien trouvé
     if (!bestStr && moves.length > 0) {
       bestStr = moves[0];
-    }
-    if (!bestStr) {
-      bestStr = "a1-a1";
     }
 
     console.log(`bestmove ${bestStr}`);
