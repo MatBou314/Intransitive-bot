@@ -40,6 +40,7 @@ function parseFEN(fenString) {
   const parsedPieces = new Int8Array(81);
   const ranks = pieceStr.split('/');
 
+  // FEN ranks run from rank 1 (Blue home, bottom, indices 72-80) to rank 9 (top, indices 0-8)
   for (let r = 0; r < 9; r++) {
     const rankStr = ranks[r];
     let col = 0;
@@ -56,7 +57,8 @@ function parseFEN(fenString) {
         else if (char === 'p') pieceVal = -2;
         else if (char === 's') pieceVal = -3;
         
-        parsedPieces[r * 9 + col] = pieceVal;
+        // Map FEN rank r (0 = rank1) to board index (8-r)
+        parsedPieces[(8 - r) * 9 + col] = pieceVal;
         col++;
       }
     }
@@ -83,8 +85,11 @@ rl.on('line', (line) => {
 
   if (cmd === 'rpsi') {
     // Identification de ton bot
-    console.log("id name MatBot-v1\nid author MatBou314");
-    console.log("protocol 1\nmode V6\nrpsiok");
+    console.log("id name MatBot-v1");
+    console.log("id author MatBou314");
+    console.log("protocol 1");
+    console.log("mode V6");
+    console.log("rpsiok");
   } 
   else if (cmd === 'isready') {
     console.log("readyok");
@@ -112,11 +117,36 @@ rl.on('line', (line) => {
 
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
-    const maxTime = inc + Math.min((time/3), 10000);
+    // Leave some margin; use a fraction of remaining time + increment
+    const maxTime = Math.max(50, Math.min(inc + Math.floor(time / 20), 10000));
 
-    const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
-    if (!moves.includes(bestMove)) console.log(`bestmove ${moves[0]}`);
-    console.log(`bestmove ${moveStr(bestMove)}`);
+    let bestMoveNum = null;
+    try {
+      bestMoveNum = iterativeDeepening(currentBoard, maxTime)[1];
+    } catch (e) {
+      // ignore, fall back
+    }
+
+    let bestStr = null;
+    if (bestMoveNum != null) {
+      bestStr = moveStr(bestMoveNum);
+      // Prefer our move only if it is in the legal list (authoritative).
+      // legalmoves may use - or x as separator.
+      const normalized = bestStr.replace('x', '-');
+      const isLegal = moves.some(m => m.replace('x', '-') === normalized || m === bestStr);
+      if (!isLegal) {
+        bestStr = null;
+      }
+    }
+    if (!bestStr && moves.length > 0) {
+      bestStr = moves[0];
+    }
+    if (bestStr) {
+      console.log(`bestmove ${bestStr}`);
+    } else {
+      // Should never happen, but avoid hanging
+      console.log(`bestmove a1-a1`);
+    }
   } 
   else if (cmd === 'quit') {
     process.exit(0);
