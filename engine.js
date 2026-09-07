@@ -95,21 +95,10 @@ rl.on('line', (line) => {
       // Reconstituer la chaîne FEN (pièces + côté à jouer)
       const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
       currentBoard = parseFEN(fenString);
-      
-      // Mise à jour de l'historique des coups s'ils sont fournis après "moves"
-      const movesIdx = words.indexOf('moves');
-      if (movesIdx !== -1) {
-        for (let i = movesIdx + 1; i < words.length; i++) {
-          const move = parseMoveStr(words[i]);
-          currentBoard.pieces[move.to] = currentBoard.pieces[move.from];
-          currentBoard.pieces[move.from] = 0;
-          currentBoard.turn = !currentBoard.turn;
-        }
-      }
     }
   } 
   else if (cmd === 'legalmoves') {
-    // Le serveur t'envoie les coups légaux. Tu pourras les stocker ici plus tard.
+    // Maybe later
   } 
   else if (cmd === 'go') {
     // Parsing du temps
@@ -121,9 +110,9 @@ rl.on('line', (line) => {
       if (words[i] === 'binc') binc = parseInt(words[i + 1], 10);
     }
 
-    // Stratégie de temps : utiliser l'incrément + 100ms de sécurité
     const inc = currentBoard.turn ? binc : rinc;
-    const maxTime = inc + 100;
+    const time = currentBoard.turn ? btime : rtime;
+    const maxTime = inc + (time/3);
 
     // Pour l'instant, on fait juste patienter le bot pour simuler une recherche
     const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
