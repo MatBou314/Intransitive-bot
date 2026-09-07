@@ -1,17 +1,18 @@
 import readline from 'readline';
 import { iterativeDeepening } from './bot.js';
 
-
 const colsName = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
 
+// Positive = Blue (uppercase), Negative = Red (lowercase)
 const pieceToChar = {
-    1: 'R', // Red Rock
-    2: 'P', // Red Paper
-    3: 'S', // Red Scissors
-    "-1": 'r', // Blue Rock
-    "-2": 'p', // Blue Paper
-    "-3": 's'  // Blue Scissors
-}
+  1: 'R',   // Blue Rock
+  2: 'P',   // Blue Paper
+  3: 'S',   // Blue Scissors
+  [-1]: 'r', // Red Rock
+  [-2]: 'p', // Red Paper
+  [-3]: 's'  // Red Scissors
+};
+
 function squareName(idx) {
   const col = colsName[idx % 9];
   const row = 9 - Math.floor(idx / 9);
@@ -34,13 +35,17 @@ function parseMoveStr(moveStr) {
 }
 
 function moveStr(move) {
-    const from = move >> 8;
-    const to = move & 255;
-    const {pieces} = currentBoard;
-    const fromPiece = pieces[from];
-    const toPiece = pieces[to];
-    if (toPiece === 0) return `${pieceToChar[fromPiece]}${squareName(from)}-${squareName(to)}`;
-    else return `${pieceToChar[fromPiece]}${squareName(from)}x${squareName(to)}`;
+  if (move == null) return null;
+  const from = move >> 8;
+  const to = move & 255;
+  const fromPiece = currentBoard.pieces[from];
+  const toPiece = currentBoard.pieces[to];
+  const pieceChar = pieceToChar[fromPiece];
+  if (toPiece === 0) {
+    return `${pieceChar}${squareName(from)}-${squareName(to)}`;
+  } else {
+    return `${pieceChar}${squareName(from)}x${squareName(to)}`;
+  }
 }
 
 function parseFEN(fenString) {
@@ -51,7 +56,7 @@ function parseFEN(fenString) {
   const parsedPieces = new Int8Array(81);
   const ranks = pieceStr.split('/');
 
-  // FEN ranks run from rank 1 (Blue home, bottom, indices 72-80) to rank 9 (top, indices 0-8)
+  // FEN : rank 1 (bas, côté Bleu, indices 72-80) → rank 9 (haut, indices 0-8)
   for (let r = 0; r < 9; r++) {
     const rankStr = ranks[r];
     let col = 0;
@@ -67,8 +72,7 @@ function parseFEN(fenString) {
         else if (char === 'r') pieceVal = -1;
         else if (char === 'p') pieceVal = -2;
         else if (char === 's') pieceVal = -3;
-        
-        // Map FEN rank r (0 = rank1) to board index (8-r)
+
         parsedPieces[(8 - r) * 9 + col] = pieceVal;
         col++;
       }
@@ -95,27 +99,25 @@ rl.on('line', (line) => {
   if (!cmd) return;
 
   if (cmd === 'rpsi') {
-    // Identification de ton bot
     console.log("id name MatBot-v1");
     console.log("id author MatBou314");
     console.log("protocol 1");
     console.log("mode V6");
     console.log("rpsiok");
-  } 
+  }
   else if (cmd === 'isready') {
     console.log("readyok");
-  } 
+  }
   else if (cmd === 'position') {
     const fenIdx = words.indexOf('fen');
     if (fenIdx !== -1) {
-      // Reconstituer la chaîne FEN (pièces + côté à jouer)
       const fenString = `${words[fenIdx + 1]} ${words[fenIdx + 2]}`;
       currentBoard = parseFEN(fenString);
     }
-  } 
+  }
   else if (cmd === 'legalmoves') {
     moves = words.slice(1);
-  } 
+  }
   else if (cmd === 'go') {
     let rtime = 0, btime = 0, rinc = 0, binc = 0;
     for (let i = 1; i < words.length; i += 2) {
@@ -127,16 +129,29 @@ rl.on('line', (line) => {
 
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
-    // Leave some margin; use a fraction of remaining time + increment
     const maxTime = inc + Math.min(10000, time/20);
 
-    const bestMove = iterativeDeepening(currentBoard, maxTime)[1];
-    if (bestMove == null) console.log(`bestmove ${moves[0]}`);
-    const bestStr = moveStr(bestMove);
+    let bestMoveNum = null;
+    try {
+      bestMoveNum = iterativeDeepening(currentBoard, maxTime)[1];
+    } catch (e) {
+      // timeout ou erreur → on tombe sur le fallback
+    }
+
+    let bestStr = moveStr(bestMoveNum);
+
+    // Si le search n'a rien trouvé d'utilisable, on prend le premier coup légal
+    if (!bestStr && moves.length > 0) {
+      bestStr = moves[0];
+    }
+
+    // Dernier filet de sécurité (ne devrait jamais arriver)
+    if (!bestStr) {
+      bestStr = "a1-a1";
+    }
+
     console.log(`bestmove ${bestStr}`);
-
-  } 
-
+  }
   else if (cmd === 'quit') {
     process.exit(0);
   }
