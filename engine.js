@@ -146,7 +146,7 @@ rl.on('line', (line) => {
 
     const inc = currentBoard.turn ? binc : rinc;
     const time = currentBoard.turn ? btime : rtime;
-    const maxTime = Math.max(50, Math.floor(inc + Math.min(10000, time / 20)));
+    const maxTime = Math.max(50, Math.floor(inc + Math.min(20000, time / 20)));
 
     let bestMoveNum = null;
     try {
