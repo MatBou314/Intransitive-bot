@@ -819,7 +819,7 @@ function evalBasique() {
 }
 
 function evalBasique2() {
-  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(10, 10) + goalProximity();
+  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) + goalProximity();
 }
 
 
