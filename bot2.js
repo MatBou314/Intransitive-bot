@@ -819,7 +819,7 @@ function evalBasique() {
 }
 
 function evalBasique2() {
-  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) * 30 + goalProximity() * 10;
+  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) + goalProximity() * 10;
 }
 
 
@@ -834,7 +834,7 @@ function minimaxMemory(depth, evalFunction, alpha = -Infinity, beta = Infinity) 
       nodeCount++;
       if ((nodeCount & 2047) === 0) {
         // Si la Map dépasse 1 million d'entrées (~50-100 MB de RAM), on purge.
-        if (memory.size > 16774000) memory.clear();
+        if (memory.size > 16000000) memory.clear();
         if (Date.now() - startTime > timeLimit) throw new Error("Timeout");
       }
       return evalFunction();
