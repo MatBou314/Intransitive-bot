@@ -833,6 +833,8 @@ function minimaxMemory(depth, evalFunction, alpha = -Infinity, beta = Infinity) 
     if (memToPiece[movePtr-1] === 0) {
       nodeCount++;
       if ((nodeCount & 2047) === 0) {
+        // Si la Map dépasse 1 million d'entrées (~50-100 MB de RAM), on purge.
+        if (memory.size > 1000000) memory.clear();
         if (Date.now() - startTime > timeLimit) throw new Error("Timeout");
       }
       return evalFunction();
@@ -1042,7 +1044,6 @@ export function iterativeDeepening(board, maxTime, evalFunction = evalBasique2) 
   let bestEval = null;
   let reachedDepth = 0;
   initState(board);
-  memory = new Map();
   movePtr = 0;
   nodeCount = 0;
   try {
@@ -1056,5 +1057,6 @@ export function iterativeDeepening(board, maxTime, evalFunction = evalBasique2) 
   } catch (error) {
       if (error.message !== "Timeout") throw error;
   }
+  console.error(`Reached depth: ${reachedDepth}`);
   return [bestEval, bestMove];
 }
