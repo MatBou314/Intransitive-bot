@@ -126,11 +126,9 @@ rl.on('line', (line) => {
 
     // Rejouer tous les coups déjà joués
     const movesIdx = words.indexOf('moves');
-    console.error(words);
     if (movesIdx !== -1) {
       for (let i = movesIdx + 1; i < words.length; i++) {
         applyMove(currentBoard, words[i]);
-        console.error("board", currentBoard.pieces);
       }
     }
   }
