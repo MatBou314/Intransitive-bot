@@ -43,9 +43,9 @@ function moveStr(move) {
   const toPiece = currentBoard.pieces[to];
   const pieceChar = pieceToChar[fromPiece];
   if (toPiece === 0) {
-    return `${pieceChar}${squareName(from)}-${squareName(to)}`;
+    return `${squareName(from)}-${squareName(to)}`;
   } else {
-    return `${pieceChar}${squareName(from)}x${squareName(to)}`;
+    return `${squareName(from)}x${squareName(to)}`;
   }
 }
 
@@ -126,12 +126,13 @@ rl.on('line', (line) => {
 
     // Rejouer tous les coups déjà joués
     const movesIdx = words.indexOf('moves');
+    console.error(words);
     if (movesIdx !== -1) {
       for (let i = movesIdx + 1; i < words.length; i++) {
         applyMove(currentBoard, words[i]);
+        console.error("board", currentBoard.pieces);
       }
     }
-    console.error("board", currentBoard.pieces);
   }
   else if (cmd === 'legalmoves') {
     moves = words.slice(1);
