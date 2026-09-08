@@ -834,7 +834,7 @@ function minimaxMemory(depth, evalFunction, alpha = -Infinity, beta = Infinity) 
       nodeCount++;
       if ((nodeCount & 2047) === 0) {
         // Si la Map dépasse 1 million d'entrées (~50-100 MB de RAM), on purge.
-        if (memory.size > 1000000) memory.clear();
+        if (memory.size > 15000000) memory.clear();
         if (Date.now() - startTime > timeLimit) throw new Error("Timeout");
       }
       return evalFunction();
