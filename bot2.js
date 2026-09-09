@@ -1,5 +1,3 @@
-const captures = [null, 3, 1, 2];
-
 function getCaseContour(caseIdx) {
   let casesContour = [];
   const isLeft = ((caseIdx % 9) === 0);
@@ -16,7 +14,7 @@ function getCaseContour(caseIdx) {
   }
   casesContour.push(caseIdx - 9);
   casesContour.push(caseIdx + 9);
-  return casesContour.filter(idx => (idx >= 0 && idx < 81))
+  return casesContour.filter(idx => (idx >= 0 && idx < 81));
 }
 
 const casesContour = Array(81);
@@ -277,6 +275,14 @@ let redSCount = 3;
 
 let redPiecesCount = 10;
 
+const blueRInfluence = new Uint8Array(81);
+const bluePInfluence = new Uint8Array(81);
+const blueSInfluence = new Uint8Array(81);
+
+const redRInfluence = new Uint8Array(81);
+const redPInfluence = new Uint8Array(81);
+const redSInfluence = new Uint8Array(81);
+
 function initState(board) {
   movePtr = 0;
   pieces.set(board.pieces);
@@ -294,7 +300,9 @@ function initState(board) {
     const piece = pieces[i];
     if (piece > 0) {
       bluePiecesCount++;
-      if (piece === 1) blueRocks[blueRCount++] = i;
+      if (piece === 1) {
+        blueRocks[blueRCount++] = i;
+      }
       else if (piece === 2) bluePapers[bluePCount++] = i;
       else blueScissors[blueSCount++] = i;
     }
@@ -305,7 +313,67 @@ function initState(board) {
       else redScissors[redSCount++] = i;
     }
   }
+  // influence 
+  for (let i = 0; i < 81; i++) {
+    const mult = 81 * i;
+
+    let min = 10
+    for (let j = 0; j < blueRCount; j++) {
+        const dist = DIST_TABLE[mult + blueRocks[j]];
+        if (dist < min) min = dist;
+    }
+    blueRInfluence[i] = min;
+
+    min = 10
+    for (let j = 0; j < bluePCount; j++) {
+        const dist = DIST_TABLE[mult + bluePapers[j]];
+        if (dist < min) min = dist;
+    }
+    bluePInfluence[i] = min;
+
+    min = 10
+    for (let j = 0; j < blueSCount; j++) {
+        const dist = DIST_TABLE[mult + blueScissors[j]];
+        if (dist < min) min = dist;
+    }
+    blueSInfluence[i] = min;
+
+
+    min = 10
+    for (let j = 0; j < redRCount; j++) {
+        const dist = DIST_TABLE[mult + redRocks[j]];
+        if (dist < min) min = dist;
+    }
+    redRInfluence[i] = min;
+
+    min = 10
+    for (let j = 0; j < redPCount; j++) {
+        const dist = DIST_TABLE[mult + redPapers[j]];
+        if (dist < min) min = dist;
+    }
+    redPInfluence[i] = min;
+
+    min = 10
+    for (let j = 0; j < redSCount; j++) {
+        const dist = DIST_TABLE[mult + redScissors[j]];
+        if (dist < min) min = dist;
+    }
+    redSInfluence[i] = min;
+  }
   initialHash()
+}
+
+
+function updateInfluence(influenceList, piecesList, nPieces) {
+    for (let i = 0; i < 81; i++) {
+        const mult = i * 81;
+        let min = 10;
+        for (let j = 0; j < nPieces; j++) {
+            const dist = DIST_TABLE[mult + piecesList[j]];
+            if (dist < min) min = dist;
+        }
+        influenceList[i] = min;
+    }
 }
 
 function playHash(from, to) {
@@ -334,16 +402,19 @@ function playHash(from, to) {
         const idx = blueRocks.indexOf(to);
         const lastPieceSquare = blueRocks[--blueRCount];
         blueRocks[idx] = lastPieceSquare;
+        updateInfluence(blueRInfluence, blueRocks, blueRCount);
       }
       else if (toPiece === 2) {
         const idx = bluePapers.indexOf(to);
         const lastPieceSquare = bluePapers[--bluePCount];
         bluePapers[idx] = lastPieceSquare;
+        updateInfluence(bluePInfluence, bluePapers, bluePCount);
       }
       else {
         const idx = blueScissors.indexOf(to);
         const lastPieceSquare = blueScissors[--blueSCount];
         blueScissors[idx] = lastPieceSquare;
+        updateInfluence(blueSInfluence, blueScissors, blueSCount);
       }
   }
   else if (toPiece < 0) {
@@ -352,42 +423,51 @@ function playHash(from, to) {
         const idx = redRocks.indexOf(to);
         const lastPieceSquare = redRocks[--redRCount];
         redRocks[idx] = lastPieceSquare;
+        updateInfluence(redRInfluence, redRocks, redRCount);
       }
       else if (toPiece === -2) {
         const idx = redPapers.indexOf(to);
         const lastPieceSquare = redPapers[--redPCount];
         redPapers[idx] = lastPieceSquare;
+        updateInfluence(redPInfluence, redPapers, redPCount);
       }
       else {
         const idx = redScissors.indexOf(to);
         const lastPieceSquare = redScissors[--redSCount];
         redScissors[idx] = lastPieceSquare;
+        updateInfluence(redSInfluence, redScissors, redSCount);
       }
   }
 
   if (fromPiece === 1) {
         const idx = blueRocks.indexOf(from);
         blueRocks[idx] = to;
+        updateInfluence(blueRInfluence, blueRocks, blueRCount);
   }
   else if (fromPiece === 2) {
     const idx = bluePapers.indexOf(from);
     bluePapers[idx] = to;
+    updateInfluence(bluePInfluence, bluePapers, bluePCount);
   }
   else if (fromPiece === 3) {
     const idx = blueScissors.indexOf(from);
     blueScissors[idx] = to;
+    updateInfluence(blueSInfluence, blueScissors, blueSCount);
   }
   else if (fromPiece === -1) {
         const idx = redRocks.indexOf(from);
         redRocks[idx] = to;
+        updateInfluence(redRInfluence, redRocks, redRCount);
   }
   else if (fromPiece === -2) {
     const idx = redPapers.indexOf(from);
     redPapers[idx] = to;
+    updateInfluence(redPInfluence, redPapers, redPCount);
   }
   else {
     const idx = redScissors.indexOf(from);
     redScissors[idx] = to;
+    updateInfluence(redSInfluence, redScissors, redSCount);
   }
 
   hash ^= zobristTurn;
@@ -402,16 +482,16 @@ function UndoHash(from, to) {
 
   if (toPiece > 0) {
     bluePiecesCount++;
-    if (toPiece === 1) blueRocks[blueRCount++] = to;
-    else if (toPiece === 2) bluePapers[bluePCount++] = to;
-    else blueScissors[blueSCount++] = to;
-
+    if (toPiece === 1) {blueRocks[blueRCount++] = to; updateInfluence(blueRInfluence, blueRocks, blueRCount);}
+    else if (toPiece === 2) {bluePapers[bluePCount++] = to; updateInfluence(bluePInfluence, bluePapers, bluePCount);}
+    else {blueScissors[blueSCount++] = to;  updateInfluence(blueSInfluence, blueScissors, blueSCount);}
+    
   }
   else if (toPiece < 0) {
     redPiecesCount++; 
-    if (toPiece === -1) redRocks[redRCount++] = to;
-    else if (toPiece === -2) redPapers[redPCount++] = to;
-    else redScissors[redSCount++] = to;
+    if (toPiece === -1) {redRocks[redRCount++] = to; updateInfluence(redRInfluence, redRocks, redRCount);}
+    else if (toPiece === -2) {redPapers[redPCount++] = to; updateInfluence(redPInfluence, redPapers, redPCount);}
+    else {redScissors[redSCount++] = to;  updateInfluence(redSInfluence, redScissors, redSCount);}
   }
 
   if (fromPiece === 1) {
@@ -445,31 +525,44 @@ function UndoHash(from, to) {
   hash = lastHash;
 }
 
+export function getBoard() {
+    return {
+        pieces: pieces,
+        turn: turn
+    }
+}
+export function playRandomMoves(board, n) {
+    initState(board);
+    movePtr = 0;
+    for (let i = 0; i < n; i++) {
+        const moveCount = getMoves(memMoves[movePtr]);
+        if (moveCount === 0) break;
+        const moveIdx = Math.floor(Math.random() * moveCount);
+        const move = memMoves[movePtr][moveIdx];
+        const from = move >> 8;
+        const to = move & 0xFF;
+        playHash(from, to);
+    }
+    return getBoard();
+}
 
-
-export function randomMove(board) {
-  const moves = getMoves(board);
-  return moves[Math.floor(Math.random() * moves.length)]
+function dist(idx1, idx2) {
+  return Math.max(Math.abs((idx1 % 9) - (idx2 % 9)), Math.abs(Math.floor(idx1/9) - Math.floor(idx2/9)));
 }
 
 const DIST_TABLE = new Uint8Array(81 * 81);
-
 for (let i = 0; i < 81; i++) {
   for (let j = 0; j < 81; j++) {
     DIST_TABLE[81 * i + j] = dist(i, j);
   }
 }
-function dist(idx1, idx2) {
-  return Math.max(Math.abs((idx1 % 9) - (idx2 % 9)), Math.abs(Math.floor(idx1/9) - Math.floor(idx2/9)));
-}
-
 
 const SQUAREVALUE = new Uint8Array(81);
 for (let i = 0; i < 81; i++) {
   SQUAREVALUE[i] = 10 - DIST_TABLE[81 * i + 8];
 }
 
-const soloValue = [0, 5, 10, 12, 14]
+const soloValue = [0, 8, 12, 14, 16]
 
 function getMatchupAdvantage(bR, bP, bS, rR, rP, rS) {
   if (bR === rR && bP === rP && bS === rS) return 0;
@@ -495,81 +588,7 @@ function getMatchupAdvantage(bR, bP, bS, rR, rP, rS) {
   return score * 100
 }
 
-function getGoodTrades(bR, bP, bS, rR, rP, rS) {
-  let goodTrades = []
-  if (bR > rP) goodTrades.push(1);
-  if (bP > rS) goodTrades.push(2);
-  if (bS > bP) goodTrades.push(1);
-  if (bR > bP) goodTrades.push(1);
-  if (bR > bP) goodTrades.push(1);
-  if (bR > bP) goodTrades.push(1);
-}
-
-
-
-function imbalance() {
-  const idx = (blueRCount << 10) | (bluePCount << 8) | (blueSCount << 6) | (redRCount << 4) | (redPCount << 2) | redSCount;
-  return MATERIAL_TABLE[idx];
-}
-
-function minimaxMaterial(bR, bP, bS, rR, rP, rS, turn) {
-  let bestEval = turn ? -Infinity : Infinity;
-  if (turn) {
-    if (bR > 0 && rS > 0) {
-      const moveEval = minimaxMaterial(bR, bP, bS, rR, rP, rS-1, !turn)
-      if (moveEval > bestEval) bestEval = moveEval;
-    }
-    if (bP > 0 && rR > 0) {
-      const moveEval = minimaxMaterial(bR, bP, bS, rR-1, rP, rS, !turn)
-      if (moveEval > bestEval) bestEval = moveEval;
-    }
-    if (bS > 0 && rP > 0) {
-      const moveEval = minimaxMaterial(bR, bP, bS, rR, rP-1, rS, !turn)
-      if (moveEval > bestEval) bestEval = moveEval;
-    }
-  } else {
-    if (rR > 0 && bS > 0) {
-      const moveEval = minimaxMaterial(bR, bP, bS-1, rR, rP, rS, !turn)
-      if (moveEval < bestEval) bestEval = moveEval;
-    }
-    if (rP > 0 && bR > 0) {
-      const moveEval = minimaxMaterial(bR-1, bP, bS, rR, rP, rS, !turn)
-      if (moveEval < bestEval) bestEval = moveEval;
-    }
-    if (rS > 0 && bP > 0) {
-      const moveEval = minimaxMaterial(bR, bP-1, bS, rR, rP, rS, !turn)
-      if (moveEval < bestEval) bestEval = moveEval;
-    }
-  }
-  if (bestEval === (turn ? -Infinity : Infinity)) {
-    return bR + bP + bS - rR - rP - rS;
-  }
-  return bestEval;
-}
-
-const MATERIAL_TABLE = new Int16Array(6400);
-function initMaterialTable() {
-  for (let bR = 0; bR <= 3; bR++) {
-    for (let bP = 0; bP <= 4; bP++) {
-      for (let bS = 0; bS <= 3; bS++) {
-        for (let rR = 0; rR <= 3; rR++) {
-          for (let rP = 0; rP <= 4; rP++) {
-            for (let rS = 0; rS <= 3; rS++) {
-              const scoreBlueFirst = minimaxMaterial(bR, bP, bS, rR, rP, rS, true);
-              const scoreRedFirst = minimaxMaterial(bR, bP, bS, rR, rP, rS, false);
-              const finalScore = (scoreBlueFirst + scoreRedFirst) / 2;
-              const index = (bR << 10) | (bP << 8) | (bS << 6) | (rR << 4) | (rP << 2) | rS;
-              MATERIAL_TABLE[index] = Math.round(finalScore * 220);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-initMaterialTable();
-
-function piecesProximity(blueAtkFactor=2, redAtkFactor=2) {
+function piecesProximityEncien(blueAtkFactor=2, redAtkFactor=2) {
   let blueAtkSum = 0, blueAtkCount = 0;
   let blueDefSum = 0, blueDefCount = 0;
 
@@ -742,7 +761,7 @@ function piecesProximity(blueAtkFactor=2, redAtkFactor=2) {
   return blueScore - redScore;
 }
 
-function goalProximity() {
+function goalProximityEncien() {
   let blueSum = 0, blueCount = 0;
   let redSum = 0, redCount = 0;
   let min = 10;
@@ -813,13 +832,49 @@ function goalProximity() {
   return (redSum / redCount) - (blueSum / blueCount);
 }
 
+function goalProximity() {
+    let score = 0;
+    score -= blueRInfluence[8] - redPInfluence[8];
+    score -= bluePInfluence[8] - redSInfluence[8];
+    score -= blueSInfluence[8] - redRInfluence[8];
 
-function evalBasique() {
-  return imbalance() + piecesProximity(5, 5) + goalProximity();
+    score += redRInfluence[72] - bluePInfluence[72];
+    score += redPInfluence[72] - blueSInfluence[72];
+    score += redSInfluence[72] - blueRInfluence[72];
+    return score;
 }
 
-function evalBasique2() {
-  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) + goalProximity() * 10;
+function piecesProximity(atkB, atkR) {
+    let score = 0;
+    for (let i = 0; i < blueRCount; i++) {
+        score += redPInfluence[blueRocks[i]];
+    }
+
+    for (let i = 0; i < bluePCount; i++) {
+        score += redSInfluence[bluePapers[i]];
+    }
+
+    for (let i = 0; i < blueSCount; i++) {
+        score += redRInfluence[blueScissors[i]];
+    }
+
+
+    for (let i = 0; i < redRCount; i++) {
+        score -= bluePInfluence[redRocks[i]];
+    }
+
+    for (let i = 0; i < redPCount; i++) {
+        score -= blueSInfluence[redPapers[i]];
+    }
+
+    for (let i = 0; i < redSCount; i++) {
+        score -= blueRInfluence[redScissors[i]];
+    }
+    return score;
+}
+
+function evaluation() {
+  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity() + goalProximity() * 15;
 }
 
 
@@ -833,8 +888,7 @@ function minimaxMemory(depth, evalFunction, alpha = -Infinity, beta = Infinity) 
     if (memToPiece[movePtr-1] === 0) {
       nodeCount++;
       if ((nodeCount & 2047) === 0) {
-        // Si la Map dépasse 1 million d'entrées (~50-100 MB de RAM), on purge.
-        if (memory.size > 16000000) memory.clear();
+        if (memory.size > 16770000) memory.clear();
         if (Date.now() - startTime > timeLimit) throw new Error("Timeout");
       }
       return evalFunction();
@@ -1037,7 +1091,7 @@ function orderMoves(moves,  bestMove) {
   moves[idx] = temp;
 }
 
-export function iterativeDeepening(board, maxTime, evalFunction = evalBasique2) {
+export function iterativeDeepening(board, maxTime, evalFunction = evaluation) {
   timeLimit = maxTime;
   startTime = Date.now();
   let bestMove = null;

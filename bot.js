@@ -24,6 +24,27 @@ for (let i = 0; i < 81; i++) {
     casesContour[i] = getCaseContour(i);
 }
 
+export function getBoard() {
+    return {
+        pieces: pieces,
+        turn: turn
+    }
+}
+export function playRandomMoves(board, n) {
+    initState(board);
+    movePtr = 0;
+    for (let i = 0; i < n; i++) {
+        const moveCount = getMoves(memMoves[movePtr]);
+        if (moveCount === 0) break;
+        const moveIdx = Math.floor(Math.random() * moveCount);
+        const move = memMoves[movePtr][moveIdx];
+        const from = move >> 8;
+        const to = move & 0xFF;
+        playHash(from, to);
+    }
+    return getBoard();
+}
+
 const memMoves = Array(128);
 for (let i = 0; i < 128; i++) memMoves[i] = new Uint32Array(72);
 
@@ -445,13 +466,6 @@ function UndoHash(from, to) {
   hash = lastHash;
 }
 
-
-
-export function randomMove(board) {
-  const moves = getMoves(board);
-  return moves[Math.floor(Math.random() * moves.length)]
-}
-
 const DIST_TABLE = new Uint8Array(81 * 81);
 
 for (let i = 0; i < 81; i++) {
@@ -462,7 +476,6 @@ for (let i = 0; i < 81; i++) {
 function dist(idx1, idx2) {
   return Math.max(Math.abs((idx1 % 9) - (idx2 % 9)), Math.abs(Math.floor(idx1/9) - Math.floor(idx2/9)));
 }
-
 
 const SQUAREVALUE = new Uint8Array(81);
 for (let i = 0; i < 81; i++) {
@@ -819,7 +832,7 @@ function evalBasique() {
 }
 
 function evalBasique2() {
-  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) * 30 + goalProximity() * 10;
+  return getMatchupAdvantage(blueRCount, bluePCount, blueSCount, redRCount, redPCount, redSCount) + piecesProximity(4, 4) * 4 + goalProximity() * 5;
 }
 
 
@@ -834,7 +847,7 @@ function minimaxMemory(depth, evalFunction, alpha = -Infinity, beta = Infinity) 
       nodeCount++;
       if ((nodeCount & 2047) === 0) {
         // Si la Map dépasse 1 million d'entrées (~50-100 MB de RAM), on purge.
-        if (memory.size > 16774000) memory.clear();
+        if (memory.size > 16770000) memory.clear();
         if (Date.now() - startTime > timeLimit) throw new Error("Timeout");
       }
       return evalFunction();
